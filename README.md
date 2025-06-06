@@ -7,9 +7,9 @@ A real-time camera-based image diffusion system for Jetson Orin NX.
 The system follows a modular pipeline architecture using FastStream and Redis for message passing:
 
 ```
-Camera → Latent Encoder → Diffusion → Latent Decoder → Display
-                            ↑
-                     Text Prompts
+Camera → Preprocess → Latent Encoder → Diffusion → Latent Decoder → Display
+                                            ↑
+Mic → VAD → STT → Rephrase -> Tokenize → Embed
 ```
 
 ### Components
