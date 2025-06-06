@@ -34,6 +34,13 @@ Mic → VAD → STT → Rephrase -> Tokenize → Embed
 
 # Architecture:
 
+```mermaid
+graph TD
+    G[Microphone] --> H[VAD] --> I[STT] --> J[Rephrase] --> K[Tokenize] --> L[Embed] --> M[Diffusion]
+    A[Camera] --> B[Preprocess] --> C[Latent Encoder] --> M[Diffusion] --> D[Latent Decoder] --> E[Display]
+    
+```
+
 Local Redis Broker: (add a docker compose to run it on the device)
 Using FastStream for piping messages between components
 Each component in its own small python script, sharing api shapes with a common imported module
