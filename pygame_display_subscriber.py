@@ -63,7 +63,7 @@ class PygameDisplay:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
                     logger.info("ESC key pressed - QUITTING")
-                    return False
+                    raise KeyboardInterrupt
                 elif event.key == pygame.K_f:
                     config.show_fps = not config.show_fps
                     logger.info(f"FPS display: {'ON' if config.show_fps else 'OFF'}")
