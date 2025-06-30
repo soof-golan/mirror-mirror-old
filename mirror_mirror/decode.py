@@ -6,23 +6,21 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
+from mirror_mirror.common import log_errors
 from mirror_mirror.models import decode_bytes
 
 logger = logging.getLogger(__name__)
 
 
-def decode_frame(frame: str) -> npt.NDArray[np.uint8]:
+@log_errors
+def decode_frame(frame: str | bytes) -> npt.NDArray[np.uint8]:
     """Decode base64 JPEG string to numpy array"""
-    try:
-        # Decode base64 string to bytes
+    if isinstance(frame, str):
         frame_bytes = decode_bytes(frame)
-        # Convert bytes to PIL Image
-        image = PIL.Image.open(io.BytesIO(frame_bytes)).convert("RGB")
-        # Convert to numpy array
-        return np.array(image, dtype=np.uint8)
-    except Exception as e:
-        logger.error(f"Failed to decode frame: {e}")
-        raise
+    frame_bytes = frame
+
+    image = PIL.Image.open(io.BytesIO(frame_bytes)).convert("RGB")
+    return np.array(image, dtype=np.uint8)
 
 
 def encode_frame(frame: npt.NDArray[np.uint8]) -> bytes:
@@ -34,7 +32,7 @@ def encode_frame(frame: npt.NDArray[np.uint8]) -> bytes:
             frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         else:
             frame_bgr = frame
-            
+
         success, data = cv2.imencode(".jpg", frame_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
         if not success:
             logger.error("Failed to encode frame")

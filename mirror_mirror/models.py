@@ -29,7 +29,6 @@ class LatentsMessage(BaseModel):
     latents: str  # Base64 encoded serialized numpy array
     shape: tuple[int, ...]
     dtype: str
-    timestamp: float
     source: str  # "camera" or "diffusion"
 
 
@@ -53,9 +52,10 @@ def encode_bytes(data: bytes) -> str:
     return base64.b64encode(data).decode("utf-8")
 
 
-def decode_bytes(data: str) -> bytes:
+def decode_bytes(data: str | bytes) -> bytes:
     """Decode base64 string back to bytes"""
-    return base64.b64decode(data.encode("utf-8"))
+
+    return base64.b64decode(data.encode("utf-8") if isinstance(data, str) else data)
 
 
 def serialize_array(arr: npt.NDArray) -> tuple[str, tuple[int, ...], str]:

@@ -41,7 +41,7 @@ class LatentDecoder:
             logger.info("VAE loaded successfully")
 
     @torch.inference_mode()
-    def decode_latents(self, latents_bytes: bytes, shape: tuple[int, ...], dtype: str) -> bytes:
+    def decode_latents(self, latents_bytes: str, shape: tuple[int, ...], dtype: str) -> bytes:
         """Decode latents to image bytes"""
         self.initialize()
 
