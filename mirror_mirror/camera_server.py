@@ -20,8 +20,8 @@ class Config(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     camera_id: int = 0
     fps: int = 30
-    frame_width: int = 1920
-    frame_height: int = 1080
+    frame_width: int = 1280
+    frame_height: int = 720
 
 
 config = Config()
