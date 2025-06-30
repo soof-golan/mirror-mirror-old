@@ -4,10 +4,10 @@ from functools import cache
 
 import numpy as np
 import torch
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, AutoencoderTiny
 from faststream import Depends, FastStream
 from faststream.redis import PubSub, RedisBroker
-from PIL import Image
+from PIL import Image, ImageOps
 from pydantic_settings import BaseSettings
 
 from mirror_mirror.common import log_errors
@@ -30,6 +30,10 @@ broker = RedisBroker(url=config.redis_url)
 app = FastStream(broker=broker)
 
 
+def np_to_pt(image_array):
+    return torch.from_numpy(image_array).permute(2, 0, 1).unsqueeze(0)
+
+
 class LatentEncoder:
     def __init__(self):
         self.vae = None
@@ -37,30 +41,23 @@ class LatentEncoder:
         self.dtype = getattr(torch, config.torch_dtype)
         self.frames_processed = 0
         self.total_processing_time = 0.0
+        logger.info(f"Loading VAE from {config.model_repo}")
+        start_time = time.time()
 
-    def initialize(self):
-        """Initialize the VAE model"""
-        if self.vae is None:
-            logger.info(f"Loading VAE from {config.model_repo}")
-            start_time = time.time()
+        pipe = StableDiffusionPipeline.from_pretrained(
+            config.model_repo,
+            torch_dtype=self.dtype,
+        )
+        self.vae: AutoencoderTiny = pipe.vae
+        self.vae.to(self.device)
+        self.vae.eval()
 
-            pipe = StableDiffusionPipeline.from_pretrained(
-                config.model_repo,
-                torch_dtype=self.dtype,
-            )
-            self.vae = pipe.vae
-            self.vae.to(self.device)
-            self.vae.eval()
-
-            load_time = time.time() - start_time
-            logger.info(f"VAE loaded successfully in {load_time:.2f}s - device: {self.device}, dtype: {self.dtype}")
+        load_time = time.time() - start_time
+        logger.info(f"VAE loaded successfully in {load_time:.2f}s - device: {self.device}, dtype: {self.dtype}")
 
     @torch.inference_mode()
     def encode_frame(self, frame_bytes: bytes) -> tuple[bytes, tuple[int, ...], str]:
         """Encode a frame to latents"""
-        self.initialize()
-        encoding_start = time.time()
-
         # Decode frame from bytes
         frame = decode_frame(frame_bytes)
 
@@ -70,11 +67,11 @@ class LatentEncoder:
         pil_image = Image.fromarray(frame)
 
         # Resize to target size
-        pil_image = pil_image.resize((config.target_size, config.target_size), Image.LANCZOS)
+        pil_image = ImageOps.fit(pil_image, (config.target_size, config.target_size))
 
         # Convert to tensor and normalize
         image_array = np.array(pil_image).astype(np.float32) / 255.0
-        image_tensor = torch.from_numpy(image_array).permute(2, 0, 1).unsqueeze(0)
+        image_tensor = np_to_pt(image_array)
         image_tensor = image_tensor.to(self.device, dtype=self.dtype)
 
         # Encode to latents
