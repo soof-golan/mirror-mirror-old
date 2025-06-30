@@ -41,16 +41,22 @@ class PygameDisplay:
         pygame.init()
 
         if config.fullscreen:
-            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            self.set_fullscreen()
             logger.info("Initialized pygame display: FULLSCREEN")
         else:
-            self.screen = pygame.display.set_mode((width, height))
+            self.set_bordered(height, width)
             logger.info(f"Initialized pygame display: {width}x{height}")
 
         pygame.display.set_caption(config.window_name)
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
         self.running = True
+
+    def set_bordered(self, height, width):
+        self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+
+    def set_fullscreen(self):
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
     def handle_events(self):
         """Handle pygame events"""
@@ -72,10 +78,10 @@ class PygameDisplay:
                     config.fullscreen = not config.fullscreen
                     screen_size = self.screen.get_size()
                     if config.fullscreen:
-                        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                        self.set_fullscreen()
                         logger.info("Switched to FULLSCREEN mode")
                     else:
-                        self.screen = pygame.display.set_mode(screen_size)
+                        self.set_bordered(screen_size[0], screen_size[1])
                         logger.info(f"Switched to WINDOWED mode: {screen_size}")
         return True
 
