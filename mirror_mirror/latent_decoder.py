@@ -32,21 +32,16 @@ class LatentDecoder:
         self.device = config.device
         self.dtype = getattr(torch, config.torch_dtype)
 
-    def initialize(self):
-        """Initialize the VAE model"""
-        if self.vae is None:
-            logger.info(f"Loading VAE from {config.model_repo}")
-            pipe = StableDiffusionPipeline.from_pretrained(config.model_repo, torch_dtype=self.dtype)
-            self.vae = pipe.vae
-            self.vae.to(self.device)
-            self.vae.eval()
-            logger.info("VAE loaded successfully")
+        logger.info(f"Loading VAE from {config.model_repo}")
+        pipe = StableDiffusionPipeline.from_pretrained(config.model_repo, torch_dtype=self.dtype)
+        self.vae = pipe.vae
+        self.vae.to(self.device)
+        self.vae.eval()
+        logger.info("VAE loaded successfully")
 
     @torch.inference_mode()
     def decode_latents(self, latents_bytes: str, shape: tuple[int, ...], dtype: str) -> bytes:
         """Decode latents to image bytes"""
-        self.initialize()
-
         # Deserialize latents
         latents_array = deserialize_array(latents_bytes, shape, dtype)
         latents_tensor = torch.from_numpy(latents_array).to(self.device, dtype=self.dtype)
