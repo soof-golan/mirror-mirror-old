@@ -152,7 +152,6 @@ def get_diffuser() -> Diffuser:
         return assert_unreachable()
 
 
-@broker.subscriber(channel=PubSub("latents:camera"))
 @broker.publisher(channel="latents:diffused")
 @log_errors
 async def diffuse_latents(
@@ -183,14 +182,11 @@ async def diffuse_latents(
 
     processing_time = time.time() - start_time
 
-    result_msg = LatentsMessage(
-        latents=latents_data, shape=shape, dtype=dtype, timestamp=latents_msg.timestamp, source="diffusion"
-    )
+    result_msg = LatentsMessage(latents=latents_data, shape=shape, dtype=dtype, source="diffusion")
 
     logger.debug(f"Diffused latents in {processing_time:.3f}s")
 
     return CarrierMessage(content=result_msg)
-
 
 
 @broker.subscriber(channel=PubSub("prompts:*", pattern=True))

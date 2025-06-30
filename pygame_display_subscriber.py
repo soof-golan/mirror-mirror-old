@@ -6,7 +6,6 @@ import pygame
 import numpy as np
 from faststream import FastStream
 from faststream.redis import RedisBroker, PubSub
-from faststream.redis.message import RedisMessage
 from pydantic_settings import BaseSettings
 
 from mirror_mirror.decode import decode_frame
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class Config(BaseSettings):
     redis_url: str = "redis://localhost:6379"
-    channel: str = "frames:camera:*"
+    channel: str = "images:processed"
     window_name: str = "Mirror Mirror - Diffusion Output"
     show_fps: bool = True
 
@@ -146,7 +145,6 @@ display = PygameDisplay()
 @broker.subscriber(channel=PubSub(config.channel, pattern=True))
 async def display_processed_frames(
     carrier: CarrierMessage,
-    _message: RedisMessage,
 ):
     """Display processed frames from diffusion pipeline"""
 
@@ -156,28 +154,23 @@ async def display_processed_frames(
 
     frame_msg = carrier.content
 
-    try:
-        # Decode frame from base64 JPEG to RGB numpy array
-        rgb_array = decode_frame(frame_msg.frame)
-        logger.debug(f"Decoded frame: {rgb_array.shape}, processing_time: {frame_msg.processing_time:.3f}s")
+    # Decode frame from base64 JPEG to RGB numpy array
+    rgb_array = decode_frame(frame_msg.frame)
 
-        # Initialize display on first frame
-        if display.screen is None:
-            height, width = rgb_array.shape[:2]
-            display.initialize(width, height)
+    # Initialize display on first frame
+    if display.screen is None:
+        height, width = rgb_array.shape[:2]
+        display.initialize(width, height)
 
-        # Display the frame
-        success = display.display_frame(rgb_array, frame_msg.processing_time)
+    # Display the frame
+    success = display.display_frame(rgb_array)
 
-        # Check if display should close
-        if not success or not display.running:
-            logger.info("Display requested shutdown")
-            display.cleanup()
-            # Stop the FastStream app
-            await app.stop()
-
-    except Exception as e:
-        logger.error(f"Error displaying frame: {e}")
+    # Check if display should close
+    if not success or not display.running:
+        logger.info("Display requested shutdown")
+        display.cleanup()
+        # Stop the FastStream app
+        await app.stop()
 
 
 @app.on_startup

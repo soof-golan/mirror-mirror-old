@@ -14,14 +14,12 @@ class FrameMessage(BaseModel):
 class PromptMessage(BaseModel):
     tag: Literal["prompt"] = "prompt"
     prompt: str
-    timestamp: float
 
 
 class AudioMessage(BaseModel):
     tag: Literal["audio"] = "audio"
     audio_data: str  # Base64 encoded audio bytes
     sample_rate: int
-    timestamp: float
 
 
 class LatentsMessage(BaseModel):
@@ -42,7 +40,7 @@ class EmbeddingMessage(BaseModel):
 
 
 class CarrierMessage(BaseModel):
-    content: FrameMessage | PromptMessage | AudioMessage | LatentsMessage | EmbeddingMessage | FrameMessage = Field(
+    content: FrameMessage | PromptMessage | AudioMessage | LatentsMessage | EmbeddingMessage = Field(
         discriminator="tag"
     )
 
@@ -52,10 +50,10 @@ def encode_bytes(data: bytes) -> str:
     return base64.b64encode(data).decode("utf-8")
 
 
-def decode_bytes(data: str | bytes) -> bytes:
+def decode_bytes(data: str) -> bytes:
     """Decode base64 string back to bytes"""
 
-    return base64.b64decode(data.encode("utf-8") if isinstance(data, str) else data)
+    return base64.b64decode(data.encode("utf-8"))
 
 
 def serialize_array(arr: npt.NDArray) -> tuple[str, tuple[int, ...], str]:

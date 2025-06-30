@@ -1,4 +1,6 @@
 import logging
+from functools import cache
+
 import torch
 from faststream import FastStream, Depends
 from faststream.redis import RedisBroker, PubSub
@@ -69,13 +71,14 @@ class LatentDecoder:
         return encode_frame(image_uint8)
 
 
+@cache
 def get_decoder() -> LatentDecoder:
     return LatentDecoder()
 
 
+@log_errors
 @broker.subscriber(channel=PubSub("latents:diffused"))
 @broker.publisher(channel="images:processed")
-@log_errors
 async def decode_diffused_latents(
     carrier: CarrierMessage,
     decoder: LatentDecoder = Depends(get_decoder),

@@ -17,7 +17,8 @@ def decode_frame(frame: str | bytes) -> npt.NDArray[np.uint8]:
     """Decode base64 JPEG string to numpy array"""
     if isinstance(frame, str):
         frame_bytes = decode_bytes(frame)
-    frame_bytes = frame
+    else:
+        frame_bytes = frame
 
     image = PIL.Image.open(io.BytesIO(frame_bytes)).convert("RGB")
     return np.array(image, dtype=np.uint8)
