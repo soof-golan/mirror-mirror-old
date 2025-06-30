@@ -11,6 +11,7 @@ The `pygame_display_subscriber.py` script subscribes to the mirror-mirror diffus
 - **Interactive controls**: 
   - ESC key or window close to exit
   - F key to toggle FPS display
+  - F11 key to toggle fullscreen/windowed mode
 - **Auto-scaling**: Automatically resizes images to fit the window
 - **High-quality display**: Uses PIL for image resizing to maintain quality
 
@@ -35,13 +36,18 @@ uv run pygame-display
 The subscriber can be configured using environment variables:
 
 - `REDIS_URL`: Redis connection URL (default: `redis://localhost:6379`)
-- `CHANNEL`: Redis channel to subscribe to (default: `images:processed`)
+- `CHANNEL`: Redis channel to subscribe to (default: `frames:camera:0`)
 - `WINDOW_NAME`: Window title (default: `Mirror Mirror - Diffusion Output`)
 - `SHOW_FPS`: Show FPS overlay (default: `True`)
+- `FULLSCREEN`: Start in fullscreen mode (default: `True`)
 
 Example:
 ```bash
+# Run with custom Redis URL and disable FPS display
 REDIS_URL=redis://localhost:6380 SHOW_FPS=False uv run python pygame_display_subscriber.py
+
+# Run in windowed mode instead of fullscreen
+FULLSCREEN=False uv run python pygame_display_subscriber.py
 ```
 
 ## Integration with Mirror-Mirror Pipeline

@@ -18,7 +18,8 @@ class Config(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     channel: str = "images:processed"
     window_name: str = "Mirror Mirror - Diffusion Output"
-    show_fps: bool = True
+    show_fps: bool = False
+    fullscreen: bool = True
 
 
 config = Config()
@@ -38,12 +39,18 @@ class PygameDisplay:
     def initialize(self, width: int = 800, height: int = 600):
         """Initialize pygame display"""
         pygame.init()
-        self.screen = pygame.display.set_mode((width, height))
+
+        if config.fullscreen:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            logger.info("Initialized pygame display: FULLSCREEN")
+        else:
+            self.screen = pygame.display.set_mode((width, height))
+            logger.info(f"Initialized pygame display: {width}x{height}")
+
         pygame.display.set_caption(config.window_name)
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
         self.running = True
-        logger.info(f"Initialized pygame display: {width}x{height}")
 
     def handle_events(self):
         """Handle pygame events"""
@@ -55,11 +62,21 @@ class PygameDisplay:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
-                    logger.info("ESC key pressed")
+                    logger.info("ESC key pressed - QUITTING")
                     return False
                 elif event.key == pygame.K_f:
                     config.show_fps = not config.show_fps
                     logger.info(f"FPS display: {'ON' if config.show_fps else 'OFF'}")
+                elif event.key == pygame.K_F11:
+                    # Toggle fullscreen mode
+                    config.fullscreen = not config.fullscreen
+                    screen_size = self.screen.get_size()
+                    if config.fullscreen:
+                        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                        logger.info("Switched to FULLSCREEN mode")
+                    else:
+                        self.screen = pygame.display.set_mode(screen_size)
+                        logger.info(f"Switched to WINDOWED mode: {screen_size}")
         return True
 
     def update_fps(self):
@@ -178,8 +195,11 @@ async def startup_handler():
     """Handle app startup"""
     logger.info("Starting pygame display subscriber")
     logger.info(f"Subscribing to channel: {config.channel}")
-    logger.info("Press ESC or close window to exit")
-    logger.info("Press F to toggle FPS display")
+    logger.info(f"Display mode: {'FULLSCREEN' if config.fullscreen else 'WINDOWED'}")
+    logger.info("Controls:")
+    logger.info("  ESC - Quit application")
+    logger.info("  F - Toggle FPS display")
+    logger.info("  F11 - Toggle fullscreen/windowed mode")
 
 
 @app.on_shutdown
