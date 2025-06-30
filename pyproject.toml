@@ -44,6 +44,7 @@ dependencies = [
 
 [project.scripts]
 diffusion-server = "mirror_mirror.diffusion_server:app"
+pygame-display = "pygame_display_subscriber:app"
 
 [build-system]
 requires = ["uv_build>=0.7.3,<0.8.0"]
