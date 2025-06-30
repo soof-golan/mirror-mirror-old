@@ -1,11 +1,12 @@
 import logging
 from functools import cache
 
+import numpy as np
 import torch
 from faststream import FastStream, Depends
 from faststream.redis import RedisBroker, PubSub
 from pydantic_settings import BaseSettings
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, AutoencoderTiny
 
 from mirror_mirror.common import log_errors
 from mirror_mirror.decode import encode_frame
@@ -34,7 +35,7 @@ class LatentDecoder:
 
         logger.info(f"Loading VAE from {config.model_repo}")
         pipe = StableDiffusionPipeline.from_pretrained(config.model_repo, torch_dtype=self.dtype)
-        self.vae = pipe.vae
+        self.vae: AutoencoderTiny = pipe.vae
         self.vae.to(self.device)
         self.vae.eval()
         logger.info("VAE loaded successfully")
@@ -50,17 +51,17 @@ class LatentDecoder:
         latents_tensor = latents_tensor / self.vae.config.scaling_factor
 
         # Decode to image
-        with torch.no_grad():
-            image = self.vae.decode(latents_tensor).sample
+        image: torch.Tensor = self.vae.decode(latents_tensor).sample
+        logger.info(f"Image shape {image.shape}")
 
         # Denormalize from [-1, 1] to [0, 1]
-        image = (image / 2 + 0.5).clamp(0, 1)
+        image = (image * 0.5 + 0.5).clamp(0, 1) * 255
 
         # Convert to numpy
         image_np = image.squeeze(0).permute(1, 2, 0).cpu().float().numpy()
 
         # Convert to uint8
-        image_uint8 = (image_np * 255).astype("uint8")
+        image_uint8 = image_np.astype(np.uint8)
 
         # Encode as JPEG bytes
         return encode_frame(image_uint8)

@@ -75,29 +75,25 @@ class FakeDiffuser(Diffuser):
 class SDXSDiffuser(Diffuser):
     def __init__(self):
         super().__init__()
-        self.pipe = None
         self.device = config.device
         self.dtype = getattr(torch, config.torch_dtype)
+        logger.info(f"Loading SDXS pipeline from {config.model_repo}")
+        self.pipe: StableDiffusionPipeline = StableDiffusionPipeline.from_pretrained(
+            config.model_repo, torch_dtype=self.dtype
+        )
+        self.pipe.set_progress_bar_config(disable=True)
+        self.pipe.unet.set_attn_processor(AttnProcessor2_0())
+        self.pipe.to(self.device)
+        self.pipe.vae.eval()
+        self.pipe.unet.eval()
 
-    def initialize(self):
-        """Initialize the diffusion pipeline"""
-        if self.pipe is None:
-            logger.info(f"Loading SDXS pipeline from {config.model_repo}")
-            self.pipe = StableDiffusionPipeline.from_pretrained(config.model_repo, torch_dtype=self.dtype)
-            self.pipe.set_progress_bar_config(disable=True)
-            self.pipe.unet.set_attn_processor(AttnProcessor2_0())
-            self.pipe.to(self.device)
-            self.pipe.vae.eval()
-            self.pipe.unet.eval()
-
-            # Pre-encode default prompt
-            self.update_prompt(self.current_prompt)
-            logger.info("SDXS pipeline loaded successfully")
+        # Pre-encode default prompt
+        self.update_prompt(self.current_prompt)
+        logger.info("SDXS pipeline loaded successfully")
 
     @torch.inference_mode()
     def diffuse_latents(self, latents: torch.Tensor) -> torch.Tensor:
         """Apply diffusion to input latents"""
-        self.initialize()
 
         latents = latents.to(self.device, dtype=self.dtype)
 
@@ -108,7 +104,7 @@ class SDXSDiffuser(Diffuser):
         prompt_embeds, negative_prompt_embeds = self.current_embedding
 
         # Apply diffusion
-        result = self.pipe(
+        result = self.pipe.__call__(
             prompt_embeds=prompt_embeds,
             negative_prompt_embeds=negative_prompt_embeds,
             num_inference_steps=config.num_inference_steps,
@@ -121,7 +117,6 @@ class SDXSDiffuser(Diffuser):
 
     def update_prompt(self, prompt: str):
         """Update the current prompt and encode it"""
-        self.initialize()
         self.current_prompt = prompt
 
         # Encode prompt
