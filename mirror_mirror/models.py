@@ -64,4 +64,4 @@ def serialize_array(arr: npt.NDArray) -> tuple[str, tuple[int, ...], str]:
 def deserialize_array(data: str, shape: tuple[int, ...], dtype: str) -> npt.NDArray:
     """Deserialize base64 string back to numpy array"""
     bytes_data = decode_bytes(data)
-    return np.frombuffer(bytes_data, dtype=dtype).reshape(shape)
+    return np.frombuffer(bytes_data, dtype=dtype).reshape(shape).copy()
