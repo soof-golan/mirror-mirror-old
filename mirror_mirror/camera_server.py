@@ -32,18 +32,11 @@ async def run_camera_loop(cap: cv2.VideoCapture) -> AsyncGenerator[CarrierMessag
     Main camera loop as an async generator.
     Captures frames and yields them as CarrierMessages.
     """
-    frame_interval = 1.0 / config.fps
-    last_frame_time = 0
     frames_published = 0
     start_time = time.time()
 
     while True:
         current_time = time.time()
-
-        # Rate limiting
-        if current_time - last_frame_time < frame_interval:
-            await asyncio.sleep(0.001)  # non-blocking sleep
-            continue
 
         success, frame = cap.read()
         if not success:
@@ -53,9 +46,7 @@ async def run_camera_loop(cap: cv2.VideoCapture) -> AsyncGenerator[CarrierMessag
         try:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             encoded_frame = encode_frame(frame)
-            message = FrameMessage(
-                frame=encode_bytes(encoded_frame), timestamp=current_time, camera_id=config.camera_id
-            )
+            message = FrameMessage(frame=encode_bytes(encoded_frame))
 
             yield CarrierMessage(content=message)
 
