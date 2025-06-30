@@ -112,15 +112,12 @@ async def encode_camera_frames(
         return None
 
     frame_msg = carrier.content
-    start_time = time.time()
 
     # Decode and validate frame data
     frame_bytes = decode_bytes(frame_msg.frame)
 
     # Encode frame to latents
     latents_data, shape, dtype = encoder.encode_frame(frame_bytes)
-
-    processing_time = time.time() - start_time
 
     latents_msg = LatentsMessage(latents=latents_data, shape=shape, dtype=dtype, source="camera")
 
