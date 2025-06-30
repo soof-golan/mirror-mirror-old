@@ -51,6 +51,7 @@ async def run_camera_loop(cap: cv2.VideoCapture) -> AsyncGenerator[CarrierMessag
             continue
 
         try:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             encoded_frame = encode_frame(frame)
             message = FrameMessage(
                 frame=encode_bytes(encoded_frame), timestamp=current_time, camera_id=config.camera_id
