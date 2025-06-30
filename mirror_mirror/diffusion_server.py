@@ -152,6 +152,7 @@ def get_diffuser() -> Diffuser:
         return assert_unreachable()
 
 
+@broker.subscriber(channel=PubSub("latents:camera"))
 @broker.publisher(channel="latents:diffused")
 @log_errors
 async def diffuse_latents(
