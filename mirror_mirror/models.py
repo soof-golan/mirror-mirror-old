@@ -9,8 +9,6 @@ from pydantic import BaseModel, Field
 class FrameMessage(BaseModel):
     tag: Literal["frame"] = "frame"
     frame: str  # Base64 encoded JPEG frame
-    timestamp: float
-    camera_id: int = 0
 
 
 class PromptMessage(BaseModel):
@@ -44,32 +42,20 @@ class EmbeddingMessage(BaseModel):
     timestamp: float
 
 
-class ProcessedFrameMessage(BaseModel):
-    tag: Literal["processed_frame"] = "processed_frame"
-    frame: str  # Base64 encoded JPEG processed frame
-    timestamp: float
-    processing_time: float
-
-
 class CarrierMessage(BaseModel):
-    content: (
-        FrameMessage 
-        | PromptMessage 
-        | AudioMessage 
-        | LatentsMessage 
-        | EmbeddingMessage 
-        | ProcessedFrameMessage
-    ) = Field(discriminator="tag")
+    content: FrameMessage | PromptMessage | AudioMessage | LatentsMessage | EmbeddingMessage | FrameMessage = Field(
+        discriminator="tag"
+    )
 
 
 def encode_bytes(data: bytes) -> str:
     """Encode bytes to base64 string for JSON serialization"""
-    return base64.b64encode(data).decode('utf-8')
+    return base64.b64encode(data).decode("utf-8")
 
 
 def decode_bytes(data: str) -> bytes:
     """Decode base64 string back to bytes"""
-    return base64.b64decode(data.encode('utf-8'))
+    return base64.b64decode(data.encode("utf-8"))
 
 
 def serialize_array(arr: npt.NDArray) -> tuple[str, tuple[int, ...], str]:
